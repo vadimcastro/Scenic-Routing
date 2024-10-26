@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base styles */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbar */
+.directions-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.directions-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.directions-scrollbar::-webkit-scrollbar-thumb {
+  background: #1B4D3E;
+  border-radius: 3px;
+}
+
+.directions-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #15372D;
+}
+
+/* Map styles */
+#map {
+  width: 100%;
+  height: 100%;
+}
+
+/* Loading styles */
+.map-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+/* Tour guide specific styles */
+.title-gradient {
+  background: linear-gradient(to right, #1B4D3E, #2D6A4F);
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+/* Input focus styles */
+input:focus, button:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(27, 77, 62, 0.2);
+}
+
+/* Direction steps styling */
+.direction-step {
+  border-left: 2px solid #1B4D3E;
+  padding-left: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    height: 50vh;
+  }
+
+  .tour-guide {
+    flex-direction: column;
+  }
+}

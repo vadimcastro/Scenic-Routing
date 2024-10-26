@@ -1,0 +1,7 @@
+# requirements.txt
+fastapi==0.78.0
+uvicorn==0.17.6
+httpx==0.22.0
+python-dotenv==0.20.0
+pydantic==1.9.1
+typing-extensions==4.2.0

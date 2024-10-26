@@ -1,0 +1,272 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tour Guide</title>
+    
+    <!-- Updated Favicon to match title icon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMyQzU1MzAiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSIxMCI+PC9jaXJjbGU+PHBvbHlnb24gcG9pbnRzPSIxNi4yNCA3Ljc2IDE0LjEyIDE0LjEyIDcuNzYgMTYuMjQgOS44OCA5Ljg4IDE2LjI0IDcuNzYiPjwvcG9seWdvbj48L3N2Zz4=" />
+    
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ api_key }}&libraries=places,geometry"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        #map {
+            height: 100vh;
+            width: 100%;
+        }
+        .title-gradient {
+            font-family: 'Oxanium', cursive;
+            background: linear-gradient(120deg, #2C5530 0%, #4A7F52 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            padding-right: 1rem;
+        }
+        .sidebar {
+            width: 400px;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        .main-content {
+            width: calc(100% - 400px);
+        }
+        .compass-icon {
+            stroke: #2C5530;
+        }
+        .compass-icon-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+        }
+    </style>
+</head>
+<body>
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="sidebar bg-white shadow-lg z-10">
+            <!-- Title with improved spacing -->
+            <div class="py-3 px-8 border-b flex items-center gap-6">
+                <div class="compass-icon-container flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="compass-icon">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polygon points="16.24 7.76, 14.12 14.12, 7.76 16.24, 9.88 9.88, 16.24 7.76"></polygon>
+                    </svg>
+                </div>
+                <h1 class="text-4xl font-bold title-gradient tracking-wider flex-grow">
+                    Tour Guide
+                </h1>
+            </div>
+
+            <!-- Input Container -->
+            <div class="p-6 space-y-6">
+                <div class="space-y-6">
+                    <div>
+                        <label for="origin" class="block text-sm font-medium text-gray-700 mb-2">Starting Point</label>
+                        <input
+                            type="text"
+                            id="origin"
+                            placeholder="Enter location"
+                            class="w-full p-4 border rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-600 transition"
+                        >
+                    </div>
+                    <div>
+                        <label for="destination" class="block text-sm font-medium text-gray-700 mb-2">Destination</label>
+                        <input
+                            type="text"
+                            id="destination"
+                            placeholder="Enter location"
+                            class="w-full p-4 border rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-600 transition"
+                        >
+                    </div>
+                    <!-- Transport Mode Selector -->
+                    <div>
+                        <label for="mode" class="block text-sm font-medium text-gray-700 mb-2">Transport Mode</label>
+                        <select
+                            id="mode"
+                            class="w-full p-4 border rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-600 transition bg-white"
+                        >
+                            <option value="driving">Driving</option>
+                            <option value="walking">Walking</option>
+                            <option value="bicycling">Bicycling</option>
+                            <option value="transit">Public Transit</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <button 
+                    id="getDirections"
+                    class="w-full bg-green-700 text-white p-4 rounded-lg hover:bg-green-800 disabled:bg-gray-300 transition duration-150 ease-in-out font-medium"
+                >
+                    Generate Route
+                </button>
+
+                <div id="directions-panel" class="hidden space-y-4">
+                </div>
+            </div>
+        </div>
+
+        <!-- Map Container -->
+        <div class="main-content relative">
+            <div id="map"></div>
+        </div>
+    </div>
+
+    <script>
+        let map;
+        let directionsRenderer;
+        let originAutocomplete;
+        let destinationAutocomplete;
+
+        function initMap() {
+            // Initialize the map with starting center point
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: 51.5074, lng: -0.1278 }, // Default to London
+                zoom: 13,
+                styles: [
+                    {
+                        featureType: "poi",
+                        elementType: "labels",
+                        stylers: [{ visibility: "off" }]
+                    }
+                ],
+                mapTypeControl: false,
+                streetViewControl: false
+            });
+
+            // Initialize DirectionsRenderer
+            directionsRenderer = new google.maps.DirectionsRenderer({
+                map: map,
+                suppressMarkers: false,
+                preserveViewport: false
+            });
+
+            // Initialize autocomplete for both input fields
+            originAutocomplete = new google.maps.places.Autocomplete(
+                document.getElementById('origin'),
+                { types: ['geocode'] }
+            );
+
+            destinationAutocomplete = new google.maps.places.Autocomplete(
+                document.getElementById('destination'),
+                { types: ['geocode'] }
+            );
+
+            // Prevent form submission on enter
+            originAutocomplete.addListener('keydown', function(e) {
+                if (e.key === 'Enter') e.preventDefault();
+            });
+            destinationAutocomplete.addListener('keydown', function(e) {
+                if (e.key === 'Enter') e.preventDefault();
+            });
+
+            // Bias autocomplete to map's viewport
+            map.addListener('bounds_changed', function() {
+                originAutocomplete.setBounds(map.getBounds());
+                destinationAutocomplete.setBounds(map.getBounds());
+            });
+        }
+
+        // Add event listener for the button
+        document.getElementById('getDirections').addEventListener('click', async () => {
+            const origin = document.getElementById('origin').value;
+            const destination = document.getElementById('destination').value;
+            const mode = document.getElementById('mode').value;
+            const button = document.getElementById('getDirections');
+            const panel = document.getElementById('directions-panel');
+
+            if (!origin || !destination) {
+                alert('Please enter both origin and destination');
+                return;
+            }
+
+            button.disabled = true;
+            button.textContent = 'Generating...';
+
+            try {
+                const response = await fetch('/api/tour', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        origin,
+                        destination,
+                        mode: mode
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch directions');
+                }
+
+                const data = await response.json();
+                
+                // Display directions
+                let html = `
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h2 class="text-xl font-semibold mb-2">Route Summary</h2>
+                        <p class="text-gray-700">Distance: ${data.distance}</p>
+                        <p class="text-gray-700">Duration: ${data.duration}</p>
+                        <p class="text-gray-700 mt-1">Mode: ${mode.charAt(0).toUpperCase() + mode.slice(1)}</p>
+                    </div>
+                    <div class="space-y-4 mt-4">
+                        <h3 class="font-semibold text-gray-900">Step by Step Directions</h3>
+                `;
+
+                data.steps.forEach((step, index) => {
+                    html += `
+                        <div class="border-b border-gray-200 pb-4">
+                            <p class="font-medium text-gray-900">${index + 1}. ${step.instruction}</p>
+                            <p class="text-sm text-gray-500 mt-1">
+                                ${step.distance} - ${step.duration}
+                            </p>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+                panel.innerHTML = html;
+                panel.classList.remove('hidden');
+
+                // Update map
+                const bounds = new google.maps.LatLngBounds();
+                bounds.extend(data.start_location);
+                bounds.extend(data.end_location);
+                map.fitBounds(bounds);
+
+                // Draw the route
+                const decodedPath = google.maps.geometry.encoding.decodePath(data.polyline);
+                new google.maps.Polyline({
+                    path: decodedPath,
+                    strokeColor: '#2C5530',
+                    strokeOpacity: 0.8,
+                    strokeWeight: 5,
+                    map: map
+                });
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error generating route. Please try again.');
+            } finally {
+                button.disabled = false;
+                button.textContent = 'Generate Route';
+            }
+        });
+
+        // Initialize the map
+        window.onload = initMap;
+    </script>
+</body>
+</html>

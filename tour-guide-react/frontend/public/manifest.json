@@ -1,0 +1,15 @@
+{
+    "short_name": "Scenic",
+    "name": "Scenic Route Explorer",
+    "icons": [
+      {
+        "src": "compass.svg",
+        "sizes": "64x64 32x32 24x24 16x16",
+        "type": "image/svg+xml"
+      }
+    ],
+    "start_url": ".",
+    "display": "standalone",
+    "theme_color": "#1B4D3E",
+    "background_color": "#ffffff"
+  }
